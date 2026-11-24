@@ -62,10 +62,12 @@ class BootstrapTests(unittest.TestCase):
                "SERVER_TAG": "github-linux", "GITHUB_REPOSITORY": "owner/agent", "GITHUB_RUN_ID": "42"}
         first = agent.configuration(env)
         second = agent.configuration({**env, "WORKER_SLOT": "2"})
-        self.assertEqual(first[3], second[3])
+        third = agent.configuration({**env, "WORKER_SLOT": "3"})
+        self.assertEqual({first[3], second[3], third[3]}, {"github-linux"})
         self.assertEqual(first[4], "GitHub Linux owner/agent #42")
         self.assertEqual(second[4], "GitHub Linux owner/agent worker 2 #42")
-        for slot in ["0", "3", "2; unexpected"]:
+        self.assertEqual(third[4], "GitHub Linux owner/agent worker 3 #42")
+        for slot in ["0", "4", "2; unexpected"]:
             with self.assertRaises(ValueError):
                 agent.configuration({**env, "WORKER_SLOT": slot})
 

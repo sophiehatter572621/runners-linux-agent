@@ -35,8 +35,8 @@ def configuration(env):
     if not re.fullmatch(r"[a-z0-9][a-z0-9-]{0,29}", tag):
         raise ValueError("Invalid SERVER_TAG")
     slot = env.get("WORKER_SLOT", "1")
-    if slot not in {"1", "2"}:
-        raise ValueError("WORKER_SLOT must be 1 or 2")
+    if slot not in {"1", "2", "3"}:
+        raise ValueError("WORKER_SLOT must be 1, 2 or 3")
     label = "GitHub Linux " + env.get("GITHUB_REPOSITORY", "local")
     if slot != "1":
         label += " worker " + slot
