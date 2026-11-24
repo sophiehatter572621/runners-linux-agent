@@ -1,40 +1,45 @@
-# sophiehatter572621 Runners Linux agent
+# sophiehatter572621 Runners Linux pool
 
-This independent, non-fork repository contributes one standard Ubuntu 24.04
-GitHub-hosted machine to the existing Runners fleet, tagged `github-linux-sophie`.
-The bootstrap, workflow and tests are stored in this repository. It does not
-check out, invoke workflows from, or require credentials from another pool.
-The current native fleet agent is downloaded from the fleet control plane and
-verified against its SHA-256 digest before execution.
+This independent repository contributes two standard Ubuntu 24.04 GitHub-hosted
+machines to my existing Runners fleet. Both use the account's `github-linux-sophie` pool tag;
+worker 2 has a distinct label. This repository is not a fork. It contains its
+own bootstrap, workflows and tests, and does not check out another account's
+repository or use another account's GitHub credentials.
 
-## Independent scheduling
+## Independent worker schedules
 
-An hourly trigger at minute **43 UTC** requests a replacement. The three
-account triggers are staggered: Eowyn :23, Sophie :43 and Luna :03. GitHub scopes
-the concurrency group to this repository; it permits one active machine and
-one pending replacement. New requests preserve the running job and replace
-an older pending request. There is no shared pool scheduler or cross-account
-API token in the workflow.
+| Worker | Workflow | Hourly trigger, UTC | Concurrency group |
+| --- | --- | --- | --- |
+| 1 | agent.yml | :43 | runners-single-agent |
+| 2 | agent-2.yml | :13 | runners-single-agent-2 |
 
-Each scheduled lease has a 345-minute budget and drains before GitHub's
-six-hour job limit. A shorter manual first lease can stagger initial retirements;
-later scheduled leases return to 345 minutes. The pending run starts after the
-active run finishes. GitHub can delay or drop scheduled requests, and public
-repository schedules disable after 60 days without repository activity. These
-are best-effort schedules, with no uninterrupted-hosting guarantee.
+The six fleet triggers are staggered at :03, :13, :23, :33, :43 and :53.
+Each worker has its own active job and pending replacement. Its group is scoped
+to this repository and cannot block another worker or account. New requests
+replace an older pending request without cancelling the active worker. There
+is no central pool scheduler or cross-account API token in these workflows.
 
-## Configuration
+Scheduled leases use a 345-minute budget, drain and end before GitHub's
+six-hour job limit. The second worker initially uses a shorter lease to offset
+its first renewal by about half a lease cycle from worker 1; future scheduled
+leases return to 345 minutes. GitHub can delay or drop scheduled requests,
+and public repository schedules disable after 60 days without repository
+activity. These are best-effort schedules, without an uninterrupted-hosting
+guarantee. Runtime volumes are ephemeral; persistent data belongs in external
+storage managed by the fleet's applications.
+
+## Configuration and controls
 
 Repository variable `CONTROL_URL` points to the existing HTTPS fleet origin.
 Repository secret `JOIN_TOKEN` holds this repository's copy of the fleet join
-credential. No GitHub API token is given to the native agent or its workloads.
-Checkout credentials are not persisted. Workloads and persistent application
-storage are managed by the existing fleet controller.
+credential. The native agent bundle comes from that control plane and is
+verified against its SHA-256 digest. The agent receives no GitHub API token,
+and checkout credentials are not persisted.
 
-Use Actions → Linux fleet agent → Run workflow to request a run. The optional
-`runtime_minutes` input accepts 30–345 minutes; scheduled runs always use 345.
-Disable the workflow to stop requesting replacements, and cancel its active
-run to stop the current machine. Other account pools are unaffected.
+Use Actions → Linux fleet agent 1 or 2 → Run workflow to request a run for that
+worker. The optional `runtime_minutes` input accepts 30–345 minutes. Disable
+that worker's workflow to stop replacements, and cancel its active run to stop
+its current machine. The other worker and account pools are unaffected.
 
 ## Checks
 

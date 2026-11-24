@@ -1,0 +1,45 @@
+name: Linux fleet agent 2
+run-name: Linux fleet agent 2 ${{ github.run_number }}
+
+on:
+  schedule:
+    - cron: '13 * * * *'
+  workflow_dispatch:
+    inputs:
+      runtime_minutes:
+        description: 'Lease for this run, 30–345 minutes; schedules always use 345'
+        required: false
+        default: '345'
+        type: string
+
+permissions:
+  contents: read
+
+# Each worker has its own repository-scoped group and replacement queue.
+# Worker 1 preserves its original group so existing running jobs are protected.
+concurrency:
+  group: runners-single-agent-2
+  cancel-in-progress: false
+
+jobs:
+  agent:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    env:
+      CONTROL_URL: ${{ vars.CONTROL_URL }}
+      JOIN_TOKEN: ${{ secrets.JOIN_TOKEN }}
+      SERVER_TAG: github-linux-sophie
+      WORKER_SLOT: '2'
+      MAX_RUNTIME_MINUTES: ${{ inputs.runtime_minutes || '345' }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Check configuration and record the job deadline
+        run: |
+          python3 scripts/run_agent.py --check
+          echo "JOB_STARTED_AT=$(date +%s)" >> "$GITHUB_ENV"
+
+      - name: Run the fleet agent
+        run: python3 -u scripts/run_agent.py

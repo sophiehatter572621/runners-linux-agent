@@ -1,5 +1,5 @@
-name: Linux fleet agent
-run-name: Linux fleet agent ${{ github.run_number }}
+name: Linux fleet agent 1
+run-name: Linux fleet agent 1 ${{ github.run_number }}
 
 on:
   schedule:
@@ -15,8 +15,8 @@ on:
 permissions:
   contents: read
 
-# This group is scoped to this repository: other accounts run independently.
-# One running host and at most one waiting replacement.
+# Each worker has its own repository-scoped group and replacement queue.
+# Worker 1 preserves its original group so existing running jobs are protected.
 concurrency:
   group: runners-single-agent
   cancel-in-progress: false
@@ -29,6 +29,7 @@ jobs:
       CONTROL_URL: ${{ vars.CONTROL_URL }}
       JOIN_TOKEN: ${{ secrets.JOIN_TOKEN }}
       SERVER_TAG: github-linux-sophie
+      WORKER_SLOT: '1'
       MAX_RUNTIME_MINUTES: ${{ inputs.runtime_minutes || '345' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -42,4 +43,3 @@ jobs:
 
       - name: Run the fleet agent
         run: python3 -u scripts/run_agent.py
-

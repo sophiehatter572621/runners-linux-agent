@@ -34,7 +34,12 @@ def configuration(env):
     tag = env.get("SERVER_TAG", "github-linux")
     if not re.fullmatch(r"[a-z0-9][a-z0-9-]{0,29}", tag):
         raise ValueError("Invalid SERVER_TAG")
+    slot = env.get("WORKER_SLOT", "1")
+    if slot not in {"1", "2"}:
+        raise ValueError("WORKER_SLOT must be 1 or 2")
     label = "GitHub Linux " + env.get("GITHUB_REPOSITORY", "local")
+    if slot != "1":
+        label += " worker " + slot
     label += " #" + env.get("GITHUB_RUN_ID", "manual")
     return origin, env["JOIN_TOKEN"], minutes, tag, label
 

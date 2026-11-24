@@ -57,6 +57,18 @@ class BootstrapTests(unittest.TestCase):
         status = {"runs": [{"id": "other", "label": "other", "live": True}, {"id": "old", "label": "mine", "live": False}, {"id": "new", "label": "mine", "live": True}]}
         self.assertEqual(agent.find_run(status, "mine")["id"], "new")
 
+    def test_worker_slots_have_distinct_labels_in_the_same_account_pool(self):
+        env = {"CONTROL_URL": "https://fleet.example", "JOIN_TOKEN": "sample",
+               "SERVER_TAG": "github-linux", "GITHUB_REPOSITORY": "owner/agent", "GITHUB_RUN_ID": "42"}
+        first = agent.configuration(env)
+        second = agent.configuration({**env, "WORKER_SLOT": "2"})
+        self.assertEqual(first[3], second[3])
+        self.assertEqual(first[4], "GitHub Linux owner/agent #42")
+        self.assertEqual(second[4], "GitHub Linux owner/agent worker 2 #42")
+        for slot in ["0", "3", "2; unexpected"]:
+            with self.assertRaises(ValueError):
+                agent.configuration({**env, "WORKER_SLOT": slot})
+
 
 if __name__ == "__main__":
     unittest.main()
